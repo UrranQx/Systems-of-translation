@@ -1,0 +1,6 @@
+decimal: 999
+hex: A8
+L: WORD_A
+/* IGNORE THIS
+999 A12 WORD_B
+*/

@@ -21,7 +21,7 @@ void skip_comments()
 
     while( c != '/' ) {
         while( input() != '*' );
-            c = input();
+        c = input(); // находится не в двойном цикле. Это странные отсупы
         if( c != '/' ) 
             unput (c);
     }

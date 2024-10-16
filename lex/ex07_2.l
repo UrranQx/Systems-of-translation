@@ -18,15 +18,17 @@ L   [_A-Za-z]
 void skip_comments()
 {
     int c = '*';	/* not char! */
-
+    int MY_EOF = '\0'; /* Стандартный EOF не срабатывает. Даже если вводить через <C-D> */
     do {
-        while ((c = input()) != '*' && c != EOF) ;
-        while ((c = input()) == '*') ;
-    } while (c != '/' && c != EOF);
-    if (c == EOF) {
-        fprintf(stderr, "?-EOF in comment\n");
-        exit(1);
-    }
+      while ((c = input()) != '*' && c != MY_EOF);//; 
+      //printf("\n23 line, c = %d, EOF = %d\n", c, MY_EOF);  
+        if (c == MY_EOF) {
+          fprintf(stderr, "?-EOF in comment\n");
+          exit(1);
+        }
+        while ((c = input()) == '*');
+    } while (c != '/' && c != MY_EOF);
+    
 }
 
 #include "yy.c"
