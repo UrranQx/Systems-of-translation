@@ -14,20 +14,30 @@ void calculate() {
     }
 }
 %}
-
-D 0[dD][0-9]+
-H 0[xX][0-9a-fA-F]+
+H 0[xX][0-9a-fA-F]
 
 %%
 
-{D} {
+0[dD][0-9]+[0-9]* {
     current_number = atoi(yytext + 2); // Пропускаем префикс "0d"
     calculate();
 }
 
-{H} {
+0[dD][0-9]+[A-Za-z]+ {
+    fprintf(stderr, "Ошибка: некорректное десятичное число '%s'.\n", yytext);
+    fprintf(stderr, "Ошибка: неверный синтаксис.\n");
+    exit(1);
+}
+
+{H}+ {
     current_number = (int)strtol(yytext, NULL, 16);
     calculate();
+}
+
+0[xX][^0-9a-fA-F]+ {
+    fprintf(stderr, "Ошибка: некорректное шестнадцатеричное число '%s'.\n", yytext);
+    fprintf(stderr, "Ошибка: неверный синтаксис.\n");
+    exit(1);
 }
 
 "+" {
