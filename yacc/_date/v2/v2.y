@@ -3,4 +3,5 @@
 
 %%
 date :   MONTH NUMBER ',' NUMBER
+     |   MONTH NUMBER ';' NUMBER
 %%
