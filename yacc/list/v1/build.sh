@@ -4,5 +4,6 @@ rm -f y.* a.out lex.yy.c
 yacc -vtd c4.y
 #lex: option -s to supress default action ECHO
 lex -s c4.l
-cc *.c
+cc *.c -lm
+
 
