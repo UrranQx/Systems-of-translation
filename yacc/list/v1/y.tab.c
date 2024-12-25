@@ -67,21 +67,82 @@
 
 
 /* First part of user prologue.  */
-#line 1 "c4.y"
+#line 2 "c4.y"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int int_count = 0;
-int float_count = 0;
-int delimiter_count[5] = {0}; // Для [,:;!?$]
+// Структура для хранения счетчиков для каждой строки
+typedef struct {
+    int integers;
+    int floats;
+    int comma;
+    int colon;
+    int semicolon;
+    int exclamation;
+    int question;
+    int dollar;
+} Counts;
 
-void yyerror(char *s) {
-    fprintf(stderr, "Error: %s\n", s);
+Counts current_counts;
+int line_count = 0;
+
+// Структура для хранения общей статистики
+Counts total_counts;
+
+void reset_counts() {
+    current_counts.integers = 0;
+    current_counts.floats = 0;
+    current_counts.comma = 0;
+    current_counts.colon = 0;
+    current_counts.semicolon = 0;
+    current_counts.exclamation = 0;
+    current_counts.question = 0;
+    current_counts.dollar = 0;
 }
 
-#line 85 "y.tab.c"
+void print_counts() {
+    printf("Целых чисел: %d\n", current_counts.integers);
+    printf("Вещественных чисел: %d\n", current_counts.floats);
+    printf("Разделителей:\n");
+    printf("  Запятая: %d\n", current_counts.comma);
+    printf("  Двоеточие: %d\n", current_counts.colon);
+    printf("  Точка с запятой: %d\n", current_counts.semicolon);
+    printf("  Восклицательный знак: %d\n", current_counts.exclamation);
+    printf("  Вопросительный знак: %d\n", current_counts.question);
+    printf("  Знак доллара: %d\n", current_counts.dollar);
+}
+
+void update_total_counts() {
+    total_counts.integers += current_counts.integers;
+    total_counts.floats += current_counts.floats;
+    total_counts.comma += current_counts.comma;
+    total_counts.colon += current_counts.colon;
+    total_counts.semicolon += current_counts.semicolon;
+    total_counts.exclamation += current_counts.exclamation;
+    total_counts.question += current_counts.question;
+    total_counts.dollar += current_counts.dollar;
+}
+
+void print_total_counts() {
+    printf("\n----- Общая статистика по всем строкам -----\n");
+    printf("Всего целых чисел: %d\n", total_counts.integers);
+    printf("Всего вещественных чисел: %d\n", total_counts.floats);
+    printf("Всего разделителей:\n");
+    printf("  Запятая: %d\n", total_counts.comma);
+    printf("  Двоеточие: %d\n", total_counts.colon);
+    printf("  Точка с запятой: %d\n", total_counts.semicolon);
+    printf("  Восклицательный знак: %d\n", total_counts.exclamation);
+    printf("  Вопросительный знак: %d\n", total_counts.question);
+    printf("  Знак доллара: %d\n", total_counts.dollar);
+}
+
+int yylex();
+void yyerror(const char *s);
+
+
+#line 146 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -125,7 +186,12 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    NUM = 258                      /* NUM  */
+    INTEGER_TOKEN = 258,           /* INTEGER_TOKEN  */
+    FLOAT_TOKEN = 259,             /* FLOAT_TOKEN  */
+    DELIMITER_TOKEN = 260,         /* DELIMITER_TOKEN  */
+    NEWLINE = 261,                 /* NEWLINE  */
+    ENDFILE = 262,                 /* ENDFILE  */
+    ERROR_TOKEN = 263              /* ERROR_TOKEN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -134,11 +200,26 @@ extern int yydebug;
 #define YYEOF 0
 #define YYerror 256
 #define YYUNDEF 257
-#define NUM 258
+#define INTEGER_TOKEN 258
+#define FLOAT_TOKEN 259
+#define DELIMITER_TOKEN 260
+#define NEWLINE 261
+#define ENDFILE 262
+#define ERROR_TOKEN 263
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 77 "c4.y"
+
+    char* sval;
+    char delimiter;
+
+#line 220 "y.tab.c"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -158,17 +239,21 @@ enum yysymbol_kind_t
   YYSYMBOL_YYEOF = 0,                      /* "end of file"  */
   YYSYMBOL_YYerror = 1,                    /* error  */
   YYSYMBOL_YYUNDEF = 2,                    /* "invalid token"  */
-  YYSYMBOL_NUM = 3,                        /* NUM  */
-  YYSYMBOL_4_n_ = 4,                       /* '\n'  */
-  YYSYMBOL_5_ = 5,                         /* ','  */
-  YYSYMBOL_6_ = 6,                         /* ':'  */
-  YYSYMBOL_7_ = 7,                         /* ';'  */
-  YYSYMBOL_8_ = 8,                         /* '!'  */
-  YYSYMBOL_9_ = 9,                         /* '?'  */
-  YYSYMBOL_YYACCEPT = 10,                  /* $accept  */
-  YYSYMBOL___list = 11,                    /* __list  */
-  YYSYMBOL__list = 12,                     /* _list  */
-  YYSYMBOL_list = 13                       /* list  */
+  YYSYMBOL_INTEGER_TOKEN = 3,              /* INTEGER_TOKEN  */
+  YYSYMBOL_FLOAT_TOKEN = 4,                /* FLOAT_TOKEN  */
+  YYSYMBOL_DELIMITER_TOKEN = 5,            /* DELIMITER_TOKEN  */
+  YYSYMBOL_NEWLINE = 6,                    /* NEWLINE  */
+  YYSYMBOL_ENDFILE = 7,                    /* ENDFILE  */
+  YYSYMBOL_ERROR_TOKEN = 8,                /* ERROR_TOKEN  */
+  YYSYMBOL_YYACCEPT = 9,                   /* $accept  */
+  YYSYMBOL_input = 10,                     /* input  */
+  YYSYMBOL_line = 11,                      /* line  */
+  YYSYMBOL_elements = 12,                  /* elements  */
+  YYSYMBOL_element = 13,                   /* element  */
+  YYSYMBOL_number = 14,                    /* number  */
+  YYSYMBOL_optional_delimiters = 15,       /* optional_delimiters  */
+  YYSYMBOL_single_delimiter = 16,          /* single_delimiter  */
+  YYSYMBOL_double_delimiter = 17           /* double_delimiter  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -494,21 +579,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  10
+#define YYFINAL  2
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   17
+#define YYLAST   12
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  10
+#define YYNTOKENS  9
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  4
+#define YYNNTS  9
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  11
+#define YYNRULES  18
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  19
+#define YYNSTATES  20
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   258
+#define YYMAXUTOK   263
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -523,12 +608,6 @@ union yyalloc
 static const yytype_int8 yytranslate[] =
 {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       4,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     8,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     5,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     6,     7,
-       2,     2,     2,     9,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -547,15 +626,22 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     1,     2,     3
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
+       5,     6,     7,     8
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    18,    18,    19,    22,    23,    26,    35,    45,    55,
-      65,    75
+       0,    93,    93,    94,    95,    98,    99,   100,   106,   113,
+     114,   117,   120,   121,   124,   125,   126,   129,   141
 };
 #endif
 
@@ -571,8 +657,10 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "\"end of file\"", "error", "\"invalid token\"", "NUM", "'\\n'", "','",
-  "':'", "';'", "'!'", "'?'", "$accept", "__list", "_list", "list", YY_NULLPTR
+  "\"end of file\"", "error", "\"invalid token\"", "INTEGER_TOKEN",
+  "FLOAT_TOKEN", "DELIMITER_TOKEN", "NEWLINE", "ENDFILE", "ERROR_TOKEN",
+  "$accept", "input", "line", "elements", "element", "number",
+  "optional_delimiters", "single_delimiter", "double_delimiter", YY_NULLPTR
 };
 
 static const char *
@@ -582,7 +670,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-6)
+#define YYPACT_NINF (-4)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -596,8 +684,8 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       8,    -5,    10,    11,    -6,     8,     8,     8,     8,     8,
-      -6,    12,    -6,    -6,    -6,    -6,    -6,    -6,    -6
+      -4,     0,    -4,     3,    -4,    -4,    -4,    -4,     2,    -4,
+      -3,    -4,    -4,    -4,    -4,     6,    -4,    -4,    -4,    -4
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -605,20 +693,20 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       4,     6,     4,     0,     5,     0,     0,     0,     0,     0,
-       1,     0,     2,     7,     8,     9,    10,    11,     3
+       2,     0,     1,     0,    12,    13,     4,     3,     0,     9,
+      14,     7,     8,     6,    10,    17,    11,    15,    16,    18
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -6,    -6,    15,     0
+      -4,    -4,    -4,    -4,     4,    -4,    -4,    -4,    -4
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     2,     3,     4
+       0,     1,     7,     8,     9,    10,    16,    17,    18
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -626,36 +714,36 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       5,     6,     7,     8,     9,    13,    14,    15,    16,    17,
-      10,     1,     0,     1,     0,    12,    18,    11
+       2,     3,    15,     4,     5,     4,     5,     6,    13,    11,
+      12,    19,    14
 };
 
 static const yytype_int8 yycheck[] =
 {
-       5,     6,     7,     8,     9,     5,     6,     7,     8,     9,
-       0,     3,    -1,     3,    -1,     4,     4,     2
+       0,     1,     5,     3,     4,     3,     4,     7,     6,     6,
+       7,     5,     8
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,    11,    12,    13,     5,     6,     7,     8,     9,
-       0,    12,     4,    13,    13,    13,    13,    13,     4
+       0,    10,     0,     1,     3,     4,     7,    11,    12,    13,
+      14,     6,     7,     6,    13,     5,    15,    16,    17,     5
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    10,    11,    11,    12,    12,    13,    13,    13,    13,
-      13,    13
+       0,     9,    10,    10,    10,    11,    11,    11,    11,    12,
+      12,    13,    14,    14,    15,    15,    15,    16,    17
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     2,     3,     0,     1,     1,     3,     3,     3,
-       3,     3
+       0,     2,     0,     2,     2,     0,     2,     2,     2,     1,
+       2,     2,     1,     1,     0,     1,     1,     1,     2
 };
 
 
@@ -1118,121 +1206,107 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* __list: _list '\n'  */
-#line 18 "c4.y"
-                   { printf("Processed lines: 1\n"); }
-#line 1125 "y.tab.c"
+  case 3: /* input: input line  */
+#line 94 "c4.y"
+                  { line_count++; printf("Обработана строка %d:\n", line_count); print_counts(); update_total_counts();reset_counts(); }
+#line 1213 "y.tab.c"
     break;
 
-  case 3: /* __list: __list _list '\n'  */
-#line 19 "c4.y"
-                          { printf("Processed lines: %d\n", yyvsp[-2] + 1); }
-#line 1131 "y.tab.c"
+  case 4: /* input: input ENDFILE  */
+#line 95 "c4.y"
+                     { printf("Всего обработано строк: %d\n", line_count); print_total_counts(); return 0; }
+#line 1219 "y.tab.c"
     break;
 
-  case 4: /* _list: %empty  */
-#line 22 "c4.y"
-                   { $ = 0; }
-#line 1137 "y.tab.c"
+  case 5: /* line: %empty  */
+#line 98 "c4.y"
+                  { reset_counts(); }
+#line 1225 "y.tab.c"
     break;
 
-  case 5: /* _list: list  */
-#line 23 "c4.y"
-             { $ = yyvsp[0]; }
-#line 1143 "y.tab.c"
+  case 6: /* line: elements NEWLINE  */
+#line 99 "c4.y"
+                       { }
+#line 1231 "y.tab.c"
     break;
 
-  case 6: /* list: NUM  */
-#line 26 "c4.y"
-          { 
-          // Проверяем, является ли число целым или вещественным
-          if (strchr(yytext, '.')) {
-              float_count++;
-          } else {
-              int_count++;
-          }
-          $ = 1; 
+  case 7: /* line: error NEWLINE  */
+#line 100 "c4.y"
+                    {
+        yyerror("Синтаксическая ошибка в строке");
+	reset_counts();
+        yyclearin;
+        yyerrok;
       }
-#line 1157 "y.tab.c"
+#line 1242 "y.tab.c"
     break;
 
-  case 7: /* list: NUM ',' list  */
-#line 35 "c4.y"
-                     { 
-          // Обработка запятой
-          if (strchr(yytext, '.')) {
-              float_count++;
-          } else {
-              int_count++;
-          }
-          delimiter_count[0]++;
-          $ = yyvsp[0] + 1; 
+  case 8: /* line: error ENDFILE  */
+#line 106 "c4.y"
+                    {
+        yyerror("Синтаксическая ошибка в строке и конец файла");
+        yyclearin;
+        yyerrok;
       }
-#line 1172 "y.tab.c"
+#line 1252 "y.tab.c"
     break;
 
-  case 8: /* list: NUM ':' list  */
-#line 45 "c4.y"
-                     { 
-          // Обработка двоеточия
-          if (strchr(yytext, '.')) {
-              float_count++;
-          } else {
-              int_count++;
-          }
-          delimiter_count[1]++;
-          $ = yyvsp[0] + 1; 
-      }
-#line 1187 "y.tab.c"
+  case 12: /* number: INTEGER_TOKEN  */
+#line 120 "c4.y"
+                      { current_counts.integers++; free((yyvsp[0].sval)); }
+#line 1258 "y.tab.c"
     break;
 
-  case 9: /* list: NUM ';' list  */
-#line 55 "c4.y"
-                     { 
-          // Обработка точки с запятой
-          if (strchr(yytext, '.')) {
-              float_count++;
-          } else {
-              int_count++;
-          }
-          delimiter_count[2]++;
-          $ = yyvsp[0] + 1; 
-      }
-#line 1202 "y.tab.c"
+  case 13: /* number: FLOAT_TOKEN  */
+#line 121 "c4.y"
+                    { current_counts.floats++; free((yyvsp[0].sval)); }
+#line 1264 "y.tab.c"
     break;
 
-  case 10: /* list: NUM '!' list  */
-#line 65 "c4.y"
-                     { 
-          // Обработка восклицательного знака
-          if (strchr(yytext, '.')) {
-              float_count++;
-          } else {
-              int_count++;
-          }
-          delimiter_count[3]++;
-          $ = yyvsp[0] + 1; 
-      }
-#line 1217 "y.tab.c"
+  case 17: /* single_delimiter: DELIMITER_TOKEN  */
+#line 129 "c4.y"
+                                  {
+                    switch ((yyvsp[0].delimiter)) {
+                        case ',': current_counts.comma++; break;
+                        case ':': current_counts.colon++; break;
+                        case ';': current_counts.semicolon++; break;
+                        case '!': current_counts.exclamation++; break;
+                        case '?': current_counts.question++; break;
+                        case '$': current_counts.dollar++; break;
+                    }
+                  }
+#line 1279 "y.tab.c"
     break;
 
-  case 11: /* list: NUM '?' list  */
-#line 75 "c4.y"
-                     { 
-          // Обработка вопросительного знака
-          if (strchr(yytext, '.')) {
-              float_count++;
-          } else {
-              int_count++;
-          }
-          delimiter_count[4]++;
-          $ = yyvsp[0] + 1; 
-      }
-#line 1232 "y.tab.c"
+  case 18: /* double_delimiter: DELIMITER_TOKEN DELIMITER_TOKEN  */
+#line 141 "c4.y"
+                                                  {
+    if ((yyvsp[-1].delimiter) == (yyvsp[0].delimiter)) {
+        yyerror("Повторяющиеся разделители недопустимы");
+    } else {
+        switch ((yyvsp[-1].delimiter)) {
+            case ',': current_counts.comma++; break;
+            case ':': current_counts.colon++; break;
+            case ';': current_counts.semicolon++; break;
+            case '!': current_counts.exclamation++; break;
+            case '?': current_counts.question++; break;
+            case '$': current_counts.dollar++; break;
+        }
+        switch ((yyvsp[0].delimiter)) {
+            case ',': current_counts.comma++; break;
+            case ':': current_counts.colon++; break;
+            case ';': current_counts.semicolon++; break;
+            case '!': current_counts.exclamation++; break;
+            case '?': current_counts.question++; break;
+            case '$': current_counts.dollar++; break;
+        }
+    }
+}
+#line 1306 "y.tab.c"
     break;
 
 
-#line 1236 "y.tab.c"
+#line 1310 "y.tab.c"
 
       default: break;
     }
@@ -1425,26 +1499,32 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 87 "c4.y"
+#line 164 "c4.y"
 
 
-// Функция для получения индекса разделителя
-int get_delimiter_index(char *delimiter) {
-    if (strcmp(delimiter, ",") == 0) return 0;
-    if (strcmp(delimiter, ":") == 0) return 1;
-    if (strcmp(delimiter, ";") == 0) return 2;
-    if (strcmp(delimiter, "!") == 0) return 3;
-    if (strcmp(delimiter, "?") == 0) return 4;
-    return -1; // Неизвестный разделитель
+void yyerror(const char *s) {
+    fprintf(stderr, "error: %s\n", s);
+    // При ошибке пропускаем текущую строку
+    int token;
+    while ((token = yylex()) != NEWLINE && token != ENDFILE && token != 0) ;
 }
 
 int main() {
-    yyparse();
-    printf("Total integers: %d\n", int_count);
-    printf("Total floats: %d\n", float_count);
-    printf("Delimiters count: [,:;!?$] -> [%d, %d, %d, %d, %d]\n", 
-           delimiter_count[0], delimiter_count[1], delimiter_count[2], 
-           delimiter_count[3], delimiter_count[4]);
-    return 0;
-}
+    // Инициализация общей статистики
+    total_counts.integers = 0;
+    total_counts.floats = 0;
+    total_counts.comma = 0;
+    total_counts.colon = 0;
+    total_counts.semicolon = 0;
+    total_counts.exclamation = 0;
+    total_counts.question = 0;
+    total_counts.dollar = 0;
 
+    int result = yyparse();
+    if (result == 0) {
+        printf("Разбор завершен успешно.\n");
+    } else {
+        printf("Разбор завершен с ошибками.\n");
+    }
+    exit(result); // Явно завершаем программу
+}

@@ -1,211 +1,259 @@
+Terminals unused in grammar
+
+    ERROR_TOKEN
+
+
+Rules useless in parser due to conflicts
+
+    4 line: ε
+
+
+State 1 conflicts: 5 shift/reduce
+
+
 Grammar
 
-    0 $accept: __list $end
+    0 $accept: input $end
 
-    1 __list: _list '\n'
-    2       | __list _list '\n'
+    1 input: ε
+    2      | input line
+    3      | input ENDFILE
 
-    3 _list: ε
-    4      | list
+    4 line: ε
+    5     | elements NEWLINE
+    6     | error NEWLINE
+    7     | error ENDFILE
 
-    5 list: NUM
-    6     | NUM ',' list
-    7     | NUM ':' list
-    8     | NUM ';' list
-    9     | NUM '!' list
-   10     | NUM '?' list
+    8 elements: element
+    9         | elements element
+
+   10 element: number optional_delimiters
+
+   11 number: INTEGER_TOKEN
+   12       | FLOAT_TOKEN
+
+   13 optional_delimiters: ε
+   14                    | single_delimiter
+   15                    | double_delimiter
+
+   16 single_delimiter: DELIMITER_TOKEN
+
+   17 double_delimiter: DELIMITER_TOKEN DELIMITER_TOKEN
 
 
 Terminals, with rules where they appear
 
     $end (0) 0
-    '\n' (10) 1 2
-    '!' (33) 9
-    ',' (44) 6
-    ':' (58) 7
-    ';' (59) 8
-    '?' (63) 10
-    error (256)
-    NUM (258) 5 6 7 8 9 10
+    error (256) 6 7
+    INTEGER_TOKEN <sval> (258) 11
+    FLOAT_TOKEN <sval> (259) 12
+    DELIMITER_TOKEN <delimiter> (260) 16 17
+    NEWLINE (261) 5 6
+    ENDFILE (262) 3 7
+    ERROR_TOKEN (263)
 
 
 Nonterminals, with rules where they appear
 
-    $accept (10)
+    $accept (9)
         on left: 0
-    __list (11)
-        on left: 1 2
-        on right: 0 2
-    _list (12)
-        on left: 3 4
-        on right: 1 2
-    list (13)
-        on left: 5 6 7 8 9 10
-        on right: 4 6 7 8 9 10
+    input (10)
+        on left: 1 2 3
+        on right: 0 2 3
+    line (11)
+        on left: 4 5 6 7
+        on right: 2
+    elements (12)
+        on left: 8 9
+        on right: 5 9
+    element (13)
+        on left: 10
+        on right: 8 9
+    number (14)
+        on left: 11 12
+        on right: 10
+    optional_delimiters (15)
+        on left: 13 14 15
+        on right: 10
+    single_delimiter (16)
+        on left: 16
+        on right: 14
+    double_delimiter (17)
+        on left: 17
+        on right: 15
 
 
 State 0
 
-    0 $accept: • __list $end
+    0 $accept: • input $end
 
-    NUM  shift, and go to state 1
+    $default  reduce using rule 1 (input)
 
-    $default  reduce using rule 3 (_list)
-
-    __list  go to state 2
-    _list   go to state 3
-    list    go to state 4
+    input  go to state 1
 
 
 State 1
 
-    5 list: NUM •
-    6     | NUM • ',' list
-    7     | NUM • ':' list
-    8     | NUM • ';' list
-    9     | NUM • '!' list
-   10     | NUM • '?' list
+    0 $accept: input • $end
+    2 input: input • line
+    3      | input • ENDFILE
 
-    ','  shift, and go to state 5
-    ':'  shift, and go to state 6
-    ';'  shift, and go to state 7
-    '!'  shift, and go to state 8
-    '?'  shift, and go to state 9
+    $end           shift, and go to state 2
+    error          shift, and go to state 3
+    INTEGER_TOKEN  shift, and go to state 4
+    FLOAT_TOKEN    shift, and go to state 5
+    ENDFILE        shift, and go to state 6
 
-    $default  reduce using rule 5 (list)
+    $end           [reduce using rule 4 (line)]
+    error          [reduce using rule 4 (line)]
+    INTEGER_TOKEN  [reduce using rule 4 (line)]
+    FLOAT_TOKEN    [reduce using rule 4 (line)]
+    ENDFILE        [reduce using rule 4 (line)]
+
+    line      go to state 7
+    elements  go to state 8
+    element   go to state 9
+    number    go to state 10
 
 
 State 2
 
-    0 $accept: __list • $end
-    2 __list: __list • _list '\n'
-
-    $end  shift, and go to state 10
-    NUM   shift, and go to state 1
-
-    $default  reduce using rule 3 (_list)
-
-    _list  go to state 11
-    list   go to state 4
-
-
-State 3
-
-    1 __list: _list • '\n'
-
-    '\n'  shift, and go to state 12
-
-
-State 4
-
-    4 _list: list •
-
-    $default  reduce using rule 4 (_list)
-
-
-State 5
-
-    6 list: NUM ',' • list
-
-    NUM  shift, and go to state 1
-
-    list  go to state 13
-
-
-State 6
-
-    7 list: NUM ':' • list
-
-    NUM  shift, and go to state 1
-
-    list  go to state 14
-
-
-State 7
-
-    8 list: NUM ';' • list
-
-    NUM  shift, and go to state 1
-
-    list  go to state 15
-
-
-State 8
-
-    9 list: NUM '!' • list
-
-    NUM  shift, and go to state 1
-
-    list  go to state 16
-
-
-State 9
-
-   10 list: NUM '?' • list
-
-    NUM  shift, and go to state 1
-
-    list  go to state 17
-
-
-State 10
-
-    0 $accept: __list $end •
+    0 $accept: input $end •
 
     $default  accept
 
 
+State 3
+
+    6 line: error • NEWLINE
+    7     | error • ENDFILE
+
+    NEWLINE  shift, and go to state 11
+    ENDFILE  shift, and go to state 12
+
+
+State 4
+
+   11 number: INTEGER_TOKEN •
+
+    $default  reduce using rule 11 (number)
+
+
+State 5
+
+   12 number: FLOAT_TOKEN •
+
+    $default  reduce using rule 12 (number)
+
+
+State 6
+
+    3 input: input ENDFILE •
+
+    $default  reduce using rule 3 (input)
+
+
+State 7
+
+    2 input: input line •
+
+    $default  reduce using rule 2 (input)
+
+
+State 8
+
+    5 line: elements • NEWLINE
+    9 elements: elements • element
+
+    INTEGER_TOKEN  shift, and go to state 4
+    FLOAT_TOKEN    shift, and go to state 5
+    NEWLINE        shift, and go to state 13
+
+    element  go to state 14
+    number   go to state 10
+
+
+State 9
+
+    8 elements: element •
+
+    $default  reduce using rule 8 (elements)
+
+
+State 10
+
+   10 element: number • optional_delimiters
+
+    DELIMITER_TOKEN  shift, and go to state 15
+
+    $default  reduce using rule 13 (optional_delimiters)
+
+    optional_delimiters  go to state 16
+    single_delimiter     go to state 17
+    double_delimiter     go to state 18
+
+
 State 11
 
-    2 __list: __list _list • '\n'
+    6 line: error NEWLINE •
 
-    '\n'  shift, and go to state 18
+    $default  reduce using rule 6 (line)
 
 
 State 12
 
-    1 __list: _list '\n' •
+    7 line: error ENDFILE •
 
-    $default  reduce using rule 1 (__list)
+    $default  reduce using rule 7 (line)
 
 
 State 13
 
-    6 list: NUM ',' list •
+    5 line: elements NEWLINE •
 
-    $default  reduce using rule 6 (list)
+    $default  reduce using rule 5 (line)
 
 
 State 14
 
-    7 list: NUM ':' list •
+    9 elements: elements element •
 
-    $default  reduce using rule 7 (list)
+    $default  reduce using rule 9 (elements)
 
 
 State 15
 
-    8 list: NUM ';' list •
+   16 single_delimiter: DELIMITER_TOKEN •
+   17 double_delimiter: DELIMITER_TOKEN • DELIMITER_TOKEN
 
-    $default  reduce using rule 8 (list)
+    DELIMITER_TOKEN  shift, and go to state 19
+
+    $default  reduce using rule 16 (single_delimiter)
 
 
 State 16
 
-    9 list: NUM '!' list •
+   10 element: number optional_delimiters •
 
-    $default  reduce using rule 9 (list)
+    $default  reduce using rule 10 (element)
 
 
 State 17
 
-   10 list: NUM '?' list •
+   14 optional_delimiters: single_delimiter •
 
-    $default  reduce using rule 10 (list)
+    $default  reduce using rule 14 (optional_delimiters)
 
 
 State 18
 
-    2 __list: __list _list '\n' •
+   15 optional_delimiters: double_delimiter •
 
-    $default  reduce using rule 2 (__list)
+    $default  reduce using rule 15 (optional_delimiters)
+
+
+State 19
+
+   17 double_delimiter: DELIMITER_TOKEN DELIMITER_TOKEN •
+
+    $default  reduce using rule 17 (double_delimiter)
