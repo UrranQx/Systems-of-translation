@@ -1,4 +1,5 @@
-rm -f y.* a.out lex.yy.c
+rm -f y.* lex.yy.c app2
+yacc -vtd app.y
 lex app.l
-yacc -d app.y
-cc *.c -o app
+# yacc -d app.y
+cc *.c -o app2
